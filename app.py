@@ -40,7 +40,7 @@ def hash_password(pw):
 
 def load_users():
     if os.path.exists(USERS_FILE):
-        return json.load(open(USERS_FILE, "r"))
+        return json.load(open(USERS_FILE))
     return {}
 
 def save_users(users):
@@ -51,7 +51,7 @@ def user_file(username):
 
 def load_user_data(username):
     if os.path.exists(user_file(username)):
-        return json.load(open(user_file(username), "r"))
+        return json.load(open(user_file(username)))
     return {"expenses": [], "monthly_budget": 0}
 
 def save_user_data(username, data):
@@ -59,9 +59,6 @@ def save_user_data(username, data):
 
 def currency(x):
     return f"₹{x:,.2f}"
-
-def now_date():
-    return datetime.now().strftime("%Y-%m-%d %H:%M")
 
 # ================= APP =================
 class ExpenseApp:
@@ -73,277 +70,307 @@ class ExpenseApp:
         self.data = None
         self.build_login()
 
-    # ---------------- LOGIN ----------------
+# ---------------- LOGIN ----------------
+
     def build_login(self):
+
         self.login = tk.Tk()
         self.login.title("Expense Tracker Pro")
         self.login.geometry("450x420")
         self.login.configure(bg=self.theme["bg"])
 
-        tk.Label(self.login, text="💸 Expense Tracker Pro",
-                 font=("Segoe UI", 22, "bold"),
+        tk.Label(self.login,
+                 text="💸 Expense Tracker Pro",
+                 font=("Segoe UI",22,"bold"),
                  bg=self.theme["bg"],
                  fg=self.theme["accent"]).pack(pady=30)
 
-        self.username = tk.Entry(self.login, font=("Segoe UI", 12))
-        self.username.pack(pady=10, ipady=8, ipadx=10)
+        self.username = tk.Entry(self.login,font=("Segoe UI",12))
+        self.username.pack(pady=10,ipady=6)
 
-        self.password = tk.Entry(self.login, font=("Segoe UI", 12), show="*")
-        self.password.pack(pady=10, ipady=8, ipadx=10)
+        self.password = tk.Entry(self.login,font=("Segoe UI",12),show="*")
+        self.password.pack(pady=10,ipady=6)
 
-        tk.Button(self.login, text="Login",
-                  bg=self.theme["accent"], fg="white",
-                  command=self.login_user).pack(pady=10)
+        tk.Button(self.login,text="Login",
+                  bg=self.theme["accent"],fg="white",
+                  width=18,command=self.login_user).pack(pady=10)
 
-        tk.Button(self.login, text="Sign Up",
-                  bg=self.theme["accent2"], fg="white",
-                  command=self.signup_user).pack()
+        tk.Button(self.login,text="Sign Up",
+                  bg=self.theme["accent2"],fg="white",
+                  width=18,command=self.signup_user).pack()
 
         self.login.mainloop()
 
     def login_user(self):
-        user = self.username.get()
-        pw = self.password.get()
 
-        if user in self.users and self.users[user]["password"] == hash_password(pw):
-            self.current_user = user
-            self.data = load_user_data(user)
+        user=self.username.get()
+        pw=self.password.get()
+
+        if user in self.users and self.users[user]["password"]==hash_password(pw):
+
+            self.current_user=user
+            self.data=load_user_data(user)
+
             self.login.destroy()
             self.build_main()
+
         else:
-            messagebox.showerror("Error", "Invalid credentials")
+            messagebox.showerror("Error","Invalid credentials")
 
     def signup_user(self):
-        user = self.username.get()
-        pw = self.password.get()
+
+        user=self.username.get()
+        pw=self.password.get()
 
         if user in self.users:
-            messagebox.showerror("Error", "User already exists")
+            messagebox.showerror("Error","User already exists")
             return
 
-        self.users[user] = {"password": hash_password(pw)}
+        self.users[user]={"password":hash_password(pw)}
         save_users(self.users)
-        save_user_data(user, {"expenses": [], "monthly_budget": 0})
-        messagebox.showinfo("Success", "Account Created!")
 
-    # ---------------- MAIN WINDOW ----------------
+        save_user_data(user,{"expenses":[],"monthly_budget":0})
+
+        messagebox.showinfo("Success","Account Created")
+
+# ---------------- MAIN WINDOW ----------------
+
     def build_main(self):
-        self.root = tk.Tk()
+
+        self.root=tk.Tk()
         self.root.title("Expense Tracker Pro")
-        self.root.geometry("1100x650")
+
+        self.root.state("zoomed")   # FULL SCREEN
+
         self.root.configure(bg=self.theme["bg"])
 
-        # Navbar
-        navbar = tk.Frame(self.root, bg=self.theme["accent"], height=60)
+        # NAVBAR
+        navbar=tk.Frame(self.root,bg=self.theme["accent"],height=60)
         navbar.pack(fill="x")
 
         tk.Label(navbar,
                  text=f"Welcome {self.current_user}",
                  bg=self.theme["accent"],
                  fg="white",
-                 font=("Segoe UI", 14, "bold")).pack(side="left", padx=20)
+                 font=("Segoe UI",14,"bold")).pack(side="left",padx=20)
 
-        tk.Button(navbar, text="Toggle Theme",
-                  bg="white", fg=self.theme["accent"],
-                  command=self.toggle_theme).pack(side="right", padx=10)
+        tk.Button(navbar,text="Toggle Theme",
+                  bg="white",
+                  command=self.toggle_theme).pack(side="right",padx=10)
 
-        tk.Button(navbar, text="Logout",
-                  bg="white", fg=self.theme["danger"],
+        tk.Button(navbar,text="Logout",
+                  bg="white",
+                  fg=self.theme["danger"],
                   command=self.logout).pack(side="right")
 
-        # Sidebar
-        sidebar = tk.Frame(self.root, bg=self.theme["card"], width=200)
-        sidebar.pack(side="left", fill="y")
+        # SIDEBAR
+        sidebar=tk.Frame(self.root,bg=self.theme["card"],width=220)
+        sidebar.pack(side="left",fill="y")
 
-        self.create_nav_button(sidebar, "Dashboard", self.show_dashboard)
-        self.create_nav_button(sidebar, "Add Expense", self.show_add_expense)
-        self.create_nav_button(sidebar, "Graphs", self.show_graph)
-        self.create_nav_button(sidebar, "Import CSV", self.import_csv)
-        self.create_nav_button(sidebar, "Export CSV", self.export_csv)
+        self.create_nav_button(sidebar,"Dashboard",self.show_dashboard)
+        self.create_nav_button(sidebar,"Add Expense",self.show_add_expense)
+        self.create_nav_button(sidebar,"Graphs",self.show_graph)
+        self.create_nav_button(sidebar,"Import CSV",self.import_csv)
+        self.create_nav_button(sidebar,"Export CSV",self.export_csv)
 
-        # Content Area
-        self.content = tk.Frame(self.root, bg=self.theme["bg"])
-        self.content.pack(fill="both", expand=True)
+        self.content=tk.Frame(self.root,bg=self.theme["bg"])
+        self.content.pack(fill="both",expand=True)
 
         self.show_dashboard()
         self.root.mainloop()
 
-    def create_nav_button(self, parent, text, command):
+    def create_nav_button(self,parent,text,command):
+
         tk.Button(parent,
                   text=text,
                   width=20,
-                  pady=10,
+                  pady=12,
+                  bd=0,
                   bg=self.theme["card"],
                   fg=self.theme["text"],
-                  bd=0,
                   command=command).pack(pady=5)
 
     def toggle_theme(self):
-        self.theme = DARK_THEME if self.theme == LIGHT_THEME else LIGHT_THEME
+
+        self.theme=DARK_THEME if self.theme==LIGHT_THEME else LIGHT_THEME
         self.root.destroy()
         self.build_main()
 
     def logout(self):
-        save_user_data(self.current_user, self.data)
+
+        save_user_data(self.current_user,self.data)
         self.root.destroy()
         self.__init__()
 
-    # ---------------- DASHBOARD ----------------
+# ---------------- DASHBOARD ----------------
+
     def show_dashboard(self):
+
         for w in self.content.winfo_children():
             w.destroy()
 
-        total = sum(e["amount"] for e in self.data["expenses"])
-        budget = self.data.get("monthly_budget", 0)
-        remaining = budget - total
+        total=sum(e["amount"] for e in self.data["expenses"])
 
-        self.create_card("Monthly Budget", currency(budget))
-        self.create_card("Total Spent", currency(total))
-        self.create_card("Remaining", currency(remaining), self.theme["accent2"])
+        tk.Label(self.content,
+                 text="Dashboard",
+                 font=("Segoe UI",22,"bold"),
+                 bg=self.theme["bg"]).pack(pady=20)
 
-        # Budget Input
-        frame = tk.Frame(self.content, bg=self.theme["bg"])
-        frame.pack(pady=20)
+        tk.Label(self.content,
+                 text=f"Total Spent: {currency(total)}",
+                 font=("Segoe UI",16),
+                 bg=self.theme["bg"]).pack()
 
-        tk.Label(frame, text="Set Monthly Budget:",
-                 bg=self.theme["bg"],
-                 fg=self.theme["text"]).pack(side="left")
+# ---------------- ADD EXPENSE ----------------
 
-        budget_entry = tk.Entry(frame)
-        budget_entry.pack(side="left", padx=10)
-
-        def set_budget():
-            try:
-                self.data["monthly_budget"] = float(budget_entry.get())
-                save_user_data(self.current_user, self.data)
-                messagebox.showinfo("Success", "Budget Updated")
-                self.show_dashboard()
-            except:
-                messagebox.showerror("Error", "Invalid Amount")
-
-        tk.Button(frame, text="Save",
-                  bg=self.theme["accent"],
-                  fg="white",
-                  command=set_budget).pack(side="left")
-
-    def create_card(self, title, value, color=None):
-        card = tk.Frame(self.content,
-                        bg=self.theme["card"],
-                        padx=30,
-                        pady=20)
-        card.pack(pady=15)
-
-        tk.Label(card,
-                 text=title,
-                 font=("Segoe UI", 12),
-                 bg=self.theme["card"],
-                 fg=self.theme["text"]).pack()
-
-        tk.Label(card,
-                 text=value,
-                 font=("Segoe UI", 18, "bold"),
-                 bg=self.theme["card"],
-                 fg=color or self.theme["accent"]).pack()
-
-    # ---------------- ADD EXPENSE ----------------
     def show_add_expense(self):
+
         for w in self.content.winfo_children():
             w.destroy()
 
         tk.Label(self.content,
-                 text="Add Expense",
-                 font=("Segoe UI", 18, "bold"),
+                 text="💸 Add Expense",
+                 font=("Segoe UI",22,"bold"),
                  bg=self.theme["bg"],
                  fg=self.theme["accent"]).pack(pady=20)
 
-        category = tk.Entry(self.content)
-        category.pack(pady=10)
+        form=tk.Frame(self.content,bg=self.theme["card"],padx=40,pady=30)
+        form.pack()
 
-        amount = tk.Entry(self.content)
-        amount.pack(pady=10)
+        tk.Label(form,text="Category",bg=self.theme["card"]).grid(row=0,column=0,pady=6)
+
+        category=ttk.Combobox(form,
+            values=["Food","Travel","Shopping","Bills","Health","Other"])
+        category.grid(row=0,column=1)
+        category.set("Food")
+
+        tk.Label(form,text="Description",bg=self.theme["card"]).grid(row=1,column=0)
+
+        desc=tk.Entry(form)
+        desc.grid(row=1,column=1)
+
+        tk.Label(form,text="Amount",bg=self.theme["card"]).grid(row=2,column=0)
+
+        amount=tk.Entry(form)
+        amount.grid(row=2,column=1)
+
+        date=tk.Entry(form)
+        date.insert(0,datetime.now().strftime("%Y-%m-%d"))
+
+        tk.Label(form,text="Date",bg=self.theme["card"]).grid(row=3,column=0)
+        date.grid(row=3,column=1)
 
         def add():
+
             try:
-                amt = float(amount.get())
+                amt=float(amount.get())
             except:
-                messagebox.showerror("Error", "Invalid Amount")
+                messagebox.showerror("Error","Invalid amount")
                 return
 
             self.data["expenses"].append({
-                "category": category.get(),
-                "amount": amt,
-                "date": now_date()
+                "category":category.get(),
+                "description":desc.get(),
+                "amount":amt,
+                "date":date.get()
             })
 
-            save_user_data(self.current_user, self.data)
-            messagebox.showinfo("Success", "Expense Added")
-            self.show_dashboard()
+            save_user_data(self.current_user,self.data)
 
-        tk.Button(self.content,
-                  text="Save Expense",
+            messagebox.showinfo("Success","Expense Added")
+
+            self.show_add_expense()
+
+        tk.Button(form,text="Add Expense",
                   bg=self.theme["accent"],
                   fg="white",
-                  command=add).pack(pady=15)
+                  command=add).grid(row=4,columnspan=2,pady=10)
 
-    # ---------------- GRAPH ----------------
+        # TABLE
+        table_frame=tk.Frame(self.content)
+        table_frame.pack(pady=30)
+
+        columns=("Date","Category","Description","Amount")
+
+        tree=ttk.Treeview(table_frame,columns=columns,show="headings")
+
+        for col in columns:
+            tree.heading(col,text=col)
+            tree.column(col,width=150)
+
+        tree.pack()
+
+        for e in self.data["expenses"]:
+            tree.insert("",tk.END,values=(
+                e["date"],
+                e["category"],
+                e.get("description",""),
+                currency(e["amount"])
+            ))
+
+# ---------------- GRAPH ----------------
+
     def show_graph(self):
+
         for w in self.content.winfo_children():
             w.destroy()
 
-        cats = {}
-        for e in self.data["expenses"]:
-            cats[e["category"]] = cats.get(e["category"], 0) + e["amount"]
+        cats={}
 
-        fig = plt.Figure(figsize=(6, 5))
-        ax = fig.add_subplot(111)
+        for e in self.data["expenses"]:
+            cats[e["category"]]=cats.get(e["category"],0)+e["amount"]
+
+        fig=plt.Figure(figsize=(6,5))
+        ax=fig.add_subplot(111)
 
         if cats:
-            ax.pie(cats.values(), labels=cats.keys(), autopct="%1.1f%%")
-        else:
-            ax.text(0.5, 0.5, "No Data", ha="center")
+            ax.pie(cats.values(),labels=cats.keys(),autopct="%1.1f%%")
 
-        ax.set_title("Expenses Distribution")
-
-        canvas = FigureCanvasTkAgg(fig, master=self.content)
+        canvas=FigureCanvasTkAgg(fig,master=self.content)
         canvas.draw()
         canvas.get_tk_widget().pack()
 
-    # ---------------- IMPORT EXPORT ----------------
-    def export_csv(self):
-        if not self.data["expenses"]:
-            messagebox.showwarning("No Data", "Nothing to export")
-            return
+# ---------------- CSV ----------------
 
-        path = filedialog.asksaveasfilename(defaultextension=".csv")
+    def export_csv(self):
+
+        path=filedialog.asksaveasfilename(defaultextension=".csv")
         if not path:
             return
 
-        with open(path, "w", newline="") as f:
-            writer = csv.writer(f)
-            writer.writerow(["date", "category", "amount"])
-            for e in self.data["expenses"]:
-                writer.writerow([e["date"], e["category"], e["amount"]])
+        with open(path,"w",newline="") as f:
 
-        messagebox.showinfo("Success", "Exported Successfully")
+            writer=csv.writer(f)
+            writer.writerow(["date","category","amount"])
+
+            for e in self.data["expenses"]:
+                writer.writerow([e["date"],e["category"],e["amount"]])
+
+        messagebox.showinfo("Exported","CSV Saved")
 
     def import_csv(self):
-        path = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
+
+        path=filedialog.askopenfilename(filetypes=[("CSV","*.csv")])
         if not path:
             return
 
-        with open(path, "r") as f:
-            reader = csv.DictReader(f)
+        with open(path) as f:
+
+            reader=csv.DictReader(f)
+
             for row in reader:
                 self.data["expenses"].append({
-                    "date": row["date"],
-                    "category": row["category"],
-                    "amount": float(row["amount"])
+                    "date":row["date"],
+                    "category":row["category"],
+                    "amount":float(row["amount"])
                 })
 
-        save_user_data(self.current_user, self.data)
-        messagebox.showinfo("Success", "Imported Successfully")
-        self.show_dashboard()
+        save_user_data(self.current_user,self.data)
+
+        messagebox.showinfo("Imported","CSV Loaded")
+        self.show_add_expense()
 
 # ---------------- RUN ----------------
-if __name__ == "__main__":
+
+if __name__=="__main__":
     ExpenseApp()
