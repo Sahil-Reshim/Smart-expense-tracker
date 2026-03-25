@@ -46,6 +46,7 @@ smart-expense-tracker/
 ├── templates/
 ├── requirements.txt
 └── README.md
+
 🚀 How to Run the Project
 1️⃣ Clone the Repository
 git clone https://github.com/your-username/smart-expense-tracker.git
